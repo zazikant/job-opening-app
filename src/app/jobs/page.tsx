@@ -115,15 +115,14 @@ export default function JobsPage() {
   }
 
   async function sendEmails() {
-    if (selectedJobs.length === 0) {
-      alert('Select jobs to send')
-      return
-    }
     setSending(true)
     const res = await fetch('/api/send-mail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobIds: selectedJobs }),
+      body: JSON.stringify({ 
+        jobIds: selectedJobs.length > 0 ? selectedJobs : undefined,
+        includeScheduled: true
+      }),
     })
     const data = await res.json()
     setSending(false)
@@ -225,10 +224,10 @@ export default function JobsPage() {
             <span className="text-gray-900 font-medium">{jobs.length} positions</span>
             <button
               onClick={sendEmails}
-              disabled={sending || selectedJobs.length === 0}
+              disabled={sending}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
-              {sending ? 'Sending...' : `Send Email (${selectedJobs.length})`}
+              {sending ? 'Sending...' : `Send Email${selectedJobs.length > 0 ? ` (${selectedJobs.length})` : ''}`}
             </button>
           </div>
 
