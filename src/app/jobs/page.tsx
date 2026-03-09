@@ -23,25 +23,6 @@ export default function JobsPage() {
   const [dateTo, setDateTo] = useState('')
   const [filterApplied, setFilterApplied] = useState(false)
 
-  async function loadJobs(from?: string, to?: string) {
-    setLoading(true)
-    let url = '/api/jobs'
-    if (from || to) {
-      const params = new URLSearchParams()
-      if (from) params.set('date_from', from)
-      if (to) params.set('date_to', to)
-      url += `?${params.toString()}`
-    }
-    const res = await fetch(url)
-    const data: Job[] | { error: string } = await res.json()
-    if (!('error' in data)) {
-      setJobs(data)
-    } else {
-      setJobs([])
-    }
-    setLoading(false)
-  }
-
   useEffect(() => {
     let ignore = false
 
@@ -97,13 +78,6 @@ export default function JobsPage() {
       }
       setLoading(false)
     })
-  }
-
-  function clearFilter() {
-    setFilterApplied(false)
-    setDateFrom('')
-    setDateTo('')
-    loadJobs()
   }
 
   async function deleteJob(id: string) {
