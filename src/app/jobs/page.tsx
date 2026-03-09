@@ -23,10 +23,6 @@ export default function JobsPage() {
   const [dateTo, setDateTo] = useState('')
   const [filterApplied, setFilterApplied] = useState(false)
 
-  useEffect(() => {
-    loadJobs()
-  }, [])
-
   async function loadJobs(from?: string, to?: string) {
     setLoading(true)
     let url = '/api/jobs'
@@ -46,9 +42,61 @@ export default function JobsPage() {
     setLoading(false)
   }
 
+  useEffect(() => {
+    let ignore = false
+
+    async function fetchJobs() {
+      setLoading(true)
+      const res = await fetch('/api/jobs')
+      const data: Job[] | { error: string } = await res.json()
+      if (!ignore) {
+        if (!('error' in data)) {
+          setJobs(data)
+        } else {
+          setJobs([])
+        }
+        setLoading(false)
+      }
+    }
+
+    fetchJobs()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
   function applyFilter() {
     setFilterApplied(true)
-    loadJobs(dateFrom, dateTo)
+    setLoading(true)
+    let url = '/api/jobs'
+    const params = new URLSearchParams()
+    if (dateFrom) params.set('date_from', dateFrom)
+    if (dateTo) params.set('date_to', dateTo)
+    url += `?${params.toString()}`
+    fetch(url).then(res => res.json()).then((data: Job[] | { error: string }) => {
+      if (!('error' in data)) {
+        setJobs(data)
+      } else {
+        setJobs([])
+      }
+      setLoading(false)
+    })
+  }
+
+  function clearFilter() {
+    setFilterApplied(false)
+    setDateFrom('')
+    setDateTo('')
+    setLoading(true)
+    fetch('/api/jobs').then(res => res.json()).then((data: Job[] | { error: string }) => {
+      if (!('error' in data)) {
+        setJobs(data)
+      } else {
+        setJobs([])
+      }
+      setLoading(false)
+    })
   }
 
   function clearFilter() {

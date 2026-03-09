@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@lib/supabase'
 import nodemailer from 'nodemailer'
 
@@ -11,7 +11,7 @@ function formatIST(date: Date): string {
   return ist.toISOString().replace('T', ' ').substring(0, 16)
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const supabase = createClient()
 
@@ -94,7 +94,11 @@ export async function POST(request: NextRequest) {
     const jobIds = jobsToSend.map(j => j.id)
     await supabase
       .from('job_openings')
-      .update({ sent_status: 'sent', updated_at: new Date().toISOString() })
+      .update({ 
+        sent_status: 'sent', 
+        mail_send_date: null,
+        updated_at: new Date().toISOString() 
+      })
       .in('id', jobIds)
 
     return NextResponse.json({ 

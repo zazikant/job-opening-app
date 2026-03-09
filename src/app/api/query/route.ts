@@ -11,52 +11,6 @@ interface QueryState {
   error: string | null
 }
 
-function parseNaturalQuery(query: string): Record<string, unknown>[] | null {
-  const supabase = createClient()
-  const q = query.toLowerCase()
-  
-  if (q.includes('all') || q === '*' || q.includes('show me')) {
-    return null
-  }
-  
-  let queryBuilder = supabase.from('job_openings').select('*')
-  
-  const locationMatch = q.match(/(?:in|at|from)\s+(?:bangalore|mumbai|delhi|hyderabad|chennai|pune|remote|new york|london|singapore)/i)
-  if (locationMatch) {
-    const location = locationMatch[1]
-    queryBuilder = queryBuilder.ilike('location', `%${location}%`)
-  }
-  
-  const verticalMatch = q.match(/(?:vertical|industry|domain)\s+(\w+)/i)
-  if (verticalMatch) {
-    const vertical = verticalMatch[1]
-    queryBuilder = queryBuilder.ilike('vertical', `%${vertical}%`)
-  }
-  
-  const functionMatch = q.match(/(?:role|function|position|job)\s+(\w+)/i)
-  if (functionMatch) {
-    const func = functionMatch[1]
-    queryBuilder = queryBuilder.ilike('job_function', `%${func}%`)
-  }
-  
-  if (q.includes('count')) {
-    queryBuilder = queryBuilder.select('*', { count: 'exact', head: true })
-  }
-  
-  if (q.includes('last month')) {
-    const lastMonth = new Date()
-    lastMonth.setMonth(lastMonth.getMonth() - 1)
-    const dateStr = lastMonth.toISOString().split('T')[0]
-    queryBuilder = queryBuilder.gte('date_added', dateStr)
-  }
-  
-  if (q.includes('recent') || q.includes('latest')) {
-    queryBuilder = queryBuilder.order('created_at', { ascending: false }).limit(10)
-  }
-  
-  return null
-}
-
 async function generateSQL(query: string): Promise<string> {
   const systemPrompt = `You are a SQL expert. Given the user's question, 
 generate a valid PostgreSQL SELECT query for the job_openings table.

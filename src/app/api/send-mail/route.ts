@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
       .from('job_openings')
       .update({ 
         sent_status: 'sent', 
+        mail_send_date: null,
         updated_at: new Date().toISOString() 
       })
       .in('id', jobIds)
