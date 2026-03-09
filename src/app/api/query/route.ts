@@ -54,7 +54,8 @@ Generate ONLY the SQL query, no explanation.`
   })
 
   if (!response.ok) {
-    throw new Error(`NVIDIA API error: ${response.status}`)
+    const errorText = await response.text()
+    throw new Error(`NVIDIA API error: ${response.status} - ${errorText}`)
   }
 
   const data = await response.json()
@@ -71,12 +72,17 @@ async function executeSQL(supabase: ReturnType<typeof createClient>, sql: string
     throw new Error('Only SELECT queries allowed for security')
   }
 
-  const { data, error } = await supabase.rpc('exec_sql', { query: sql })
+  const { data, error } = await supabase.rpc('exec_sql', { query_text: sql })
 
   if (error) {
     throw new Error(error.message)
   }
 
+  // The function returns JSON directly, not wrapped in an object
+  if (typeof data === 'string') {
+    return JSON.parse(data)
+  }
+  
   return data || []
 }
 
