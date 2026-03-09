@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = createClient()
-  const { data, error } = await supabase
-    .from('job_openings')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const { searchParams } = new URL(request.url)
+  
+  let query = supabase.from('job_openings').select('*')
+
+  const dateFrom = searchParams.get('date_from')
+  const dateTo = searchParams.get('date_to')
+
+  if (dateFrom) {
+    query = query.gte('date_added', dateFrom)
+  }
+  if (dateTo) {
+    query = query.lte('date_added', dateTo)
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

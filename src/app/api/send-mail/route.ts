@@ -71,10 +71,19 @@ export async function POST(request: NextRequest) {
 
     await transporter.sendMail(mailOptions)
 
+    const jobIds = jobs.map(j => j.id)
+    await supabase
+      .from('job_openings')
+      .update({ 
+        sent_status: 'sent', 
+        updated_at: new Date().toISOString() 
+      })
+      .in('id', jobIds)
+
     return NextResponse.json({ 
       success: true, 
       sent_count: jobs.length,
-      jobs: jobs.map(j => j.id)
+      jobs: jobIds
     })
 
   } catch (e: unknown) {

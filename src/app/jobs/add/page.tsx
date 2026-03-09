@@ -15,6 +15,7 @@ export default function AddJobPage() {
     job_function: '',
     location: '',
     mail_send_date: '',
+    mail_send_time: '09:00',
   })
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -37,6 +38,13 @@ export default function AddJobPage() {
     }
 
     setLoading(true)
+
+    const jobData = {
+      ...form,
+      mail_send_date: form.mail_send_date ? `${form.mail_send_date} ${form.mail_send_time}:00` : null,
+      sent_status: 'pending',
+    }
+    delete (jobData as Record<string, unknown>).mail_send_time
 
     try {
       if (file) {
@@ -131,12 +139,21 @@ export default function AddJobPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Mail Send Date
             </label>
-            <input
-              type="date"
-              value={form.mail_send_date}
-              onChange={e => setForm({ ...form, mail_send_date: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={form.mail_send_date}
+                onChange={e => setForm({ ...form, mail_send_date: e.target.value })}
+                className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <input
+                type="time"
+                value={form.mail_send_time}
+                onChange={e => setForm({ ...form, mail_send_time: e.target.value })}
+                className="w-32 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Email will auto-send at scheduled date/time (IST)</p>
           </div>
 
           <div>

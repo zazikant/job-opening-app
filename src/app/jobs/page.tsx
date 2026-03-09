@@ -19,30 +19,44 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedJobs, setSelectedJobs] = useState<string[]>([])
   const [sending, setSending] = useState(false)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [filterApplied, setFilterApplied] = useState(false)
 
   useEffect(() => {
-    let ignore = false
-
-    async function loadData() {
-      setLoading(true)
-      const res = await fetch('/api/jobs')
-      const data: Job[] | { error: string } = await res.json()
-      if (!ignore) {
-        if (!('error' in data)) {
-          setJobs(data)
-        } else {
-          setJobs([])
-        }
-        setLoading(false)
-      }
-    }
-
-    loadData()
-
-    return () => {
-      ignore = true
-    }
+    loadJobs()
   }, [])
+
+  async function loadJobs(from?: string, to?: string) {
+    setLoading(true)
+    let url = '/api/jobs'
+    if (from || to) {
+      const params = new URLSearchParams()
+      if (from) params.set('date_from', from)
+      if (to) params.set('date_to', to)
+      url += `?${params.toString()}`
+    }
+    const res = await fetch(url)
+    const data: Job[] | { error: string } = await res.json()
+    if (!('error' in data)) {
+      setJobs(data)
+    } else {
+      setJobs([])
+    }
+    setLoading(false)
+  }
+
+  function applyFilter() {
+    setFilterApplied(true)
+    loadJobs(dateFrom, dateTo)
+  }
+
+  function clearFilter() {
+    setFilterApplied(false)
+    setDateFrom('')
+    setDateTo('')
+    loadJobs()
+  }
 
   async function deleteJob(id: string) {
     if (!confirm('Delete this job?')) return
@@ -118,9 +132,49 @@ export default function JobsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-4">
+          <div className="p-4 border-b">
+            <div className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">From Date</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={e => setDateFrom(e.target.value)}
+                  className="px-3 py-1.5 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">To Date</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={e => setDateTo(e.target.value)}
+                  className="px-3 py-1.5 border rounded text-sm"
+                />
+              </div>
+              <button
+                onClick={applyFilter}
+                className="px-4 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
+              >
+                Filter
+              </button>
+              {filterApplied && (
+                <button
+                  onClick={clearFilter}
+                  className="px-4 py-1.5 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                >
+                  Clear
+                </button>
+              )}
+              <span className="ml-auto text-gray-600 text-sm">{jobs.length} positions</span>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-4 border-b flex justify-between items-center">
-            <span className="text-gray-600">{jobs.length} positions</span>
+            <span className="text-gray-900 font-medium">{jobs.length} positions</span>
             <button
               onClick={sendEmails}
               disabled={sending || selectedJobs.length === 0}
@@ -170,12 +224,12 @@ export default function JobsPage() {
                           className="rounded"
                         />
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{idx + 1}</td>
-                      <td className="px-4 py-3 font-medium">{job.vertical}</td>
-                      <td className="px-4 py-3">{job.job_function}</td>
-                      <td className="px-4 py-3">{job.location}</td>
-                      <td className="px-4 py-3 text-gray-500">{job.date_added}</td>
-                      <td className="px-4 py-3 text-gray-500">{job.mail_send_date || '-'}</td>
+                      <td className="px-4 py-3">{idx + 1}</td>
+                      <td className="px-4 py-3 font-medium text-black">{job.vertical}</td>
+                      <td className="px-4 py-3 text-black">{job.job_function}</td>
+                      <td className="px-4 py-3 text-black">{job.location}</td>
+                      <td className="px-4 py-3 text-black">{job.date_added}</td>
+                      <td className="px-4 py-3 text-black">{job.mail_send_date || '-'}</td>
                       <td className="px-4 py-3">
                         {job.creative_url ? (
                           <a 

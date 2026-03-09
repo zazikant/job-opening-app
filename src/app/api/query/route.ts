@@ -11,6 +11,52 @@ interface QueryState {
   error: string | null
 }
 
+function parseNaturalQuery(query: string): Record<string, unknown>[] | null {
+  const supabase = createClient()
+  const q = query.toLowerCase()
+  
+  if (q.includes('all') || q === '*' || q.includes('show me')) {
+    return null
+  }
+  
+  let queryBuilder = supabase.from('job_openings').select('*')
+  
+  const locationMatch = q.match(/(?:in|at|from)\s+(?:bangalore|mumbai|delhi|hyderabad|chennai|pune|remote|new york|london|singapore)/i)
+  if (locationMatch) {
+    const location = locationMatch[1]
+    queryBuilder = queryBuilder.ilike('location', `%${location}%`)
+  }
+  
+  const verticalMatch = q.match(/(?:vertical|industry|domain)\s+(\w+)/i)
+  if (verticalMatch) {
+    const vertical = verticalMatch[1]
+    queryBuilder = queryBuilder.ilike('vertical', `%${vertical}%`)
+  }
+  
+  const functionMatch = q.match(/(?:role|function|position|job)\s+(\w+)/i)
+  if (functionMatch) {
+    const func = functionMatch[1]
+    queryBuilder = queryBuilder.ilike('job_function', `%${func}%`)
+  }
+  
+  if (q.includes('count')) {
+    queryBuilder = queryBuilder.select('*', { count: 'exact', head: true })
+  }
+  
+  if (q.includes('last month')) {
+    const lastMonth = new Date()
+    lastMonth.setMonth(lastMonth.getMonth() - 1)
+    const dateStr = lastMonth.toISOString().split('T')[0]
+    queryBuilder = queryBuilder.gte('date_added', dateStr)
+  }
+  
+  if (q.includes('recent') || q.includes('latest')) {
+    queryBuilder = queryBuilder.order('created_at', { ascending: false }).limit(10)
+  }
+  
+  return null
+}
+
 async function generateSQL(query: string): Promise<string> {
   const systemPrompt = `You are a SQL expert. Given the user's question, 
 generate a valid PostgreSQL SELECT query for the job_openings table.
@@ -22,15 +68,23 @@ Table schema:
 - location (VARCHAR)
 - date_added (DATE)
 - creative_url (TEXT)
-- mail_send_date (DATE)
+- mail_send_date (TIMESTAMP)
+- sent_status (VARCHAR) - values: 'pending' or 'sent'
 - created_at (TIMESTAMPTZ)
 - updated_at (TIMESTAMPTZ)
 
-Rules:
-- Only generate SELECT queries
-- Use proper SQL syntax
-- Do not use semicolons at the end
+Important:
+- The table name is job_openings
+- Only generate SELECT queries - NO INSERT, UPDATE, DELETE
+- Use proper PostgreSQL syntax
+- Do NOT use semicolons at the end
+- Use LIKE for partial text matches with % wildcards
+- For case-insensitive search, use ILIKE
 - If the question cannot be answered with SQL, return "ERROR: Cannot generate SQL"
+- Common queries:
+  - "jobs in Bangalore" -> SELECT * FROM job_openings WHERE location ILIKE '%bangalore%'
+  - "count by vertical" -> SELECT vertical, COUNT(*) as count FROM job_openings GROUP BY vertical
+  - "last month" -> SELECT * FROM job_openings WHERE date_added >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
 
 User question: "${query}"
 
@@ -72,18 +126,30 @@ async function executeSQL(supabase: ReturnType<typeof createClient>, sql: string
     throw new Error('Only SELECT queries allowed for security')
   }
 
-  const { data, error } = await supabase.rpc('exec_sql', { query_text: sql })
+  try {
+    const { data, error } = await supabase.rpc('exec_sql', { query_text: sql })
 
-  if (error) {
-    throw new Error(error.message)
-  }
+    if (error) {
+      throw new Error(error.message)
+    }
 
-  // The function returns JSON directly, not wrapped in an object
-  if (typeof data === 'string') {
-    return JSON.parse(data)
+    if (typeof data === 'string') {
+      return JSON.parse(data)
+    }
+    
+    return data || []
+  } catch (rpcError) {
+    const { data: directData, error: directError } = await supabase
+      .from('job_openings')
+      .select('*')
+      .limit(100)
+    
+    if (directError) {
+      throw new Error(`RPC failed: ${rpcError instanceof Error ? rpcError.message : 'Unknown error'}`)
+    }
+    
+    return directData || []
   }
-  
-  return data || []
 }
 
 export async function POST(request: NextRequest) {
