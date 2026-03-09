@@ -8,6 +8,7 @@ interface QueryResult {
   sql: string | null
   results: Record<string, unknown>[] | null
   error: string | null
+  steps?: string[]
 }
 
 function downloadCSV(results: Record<string, unknown>[], filename?: string) {
@@ -71,7 +72,7 @@ export default function QueryPage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-gray-600 hover:text-indigo-600">
+            <Link href="/" className="text-black hover:text-indigo-600">
               ← Back
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">AI Query</h1>
@@ -97,7 +98,7 @@ export default function QueryPage() {
               {loading ? 'Querying...' : 'Search'}
             </button>
           </div>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-black mt-2">
             Try: &quot;jobs in Bangalore&quot;, &quot;count by vertical&quot;, &quot;all positions from last month&quot;
           </p>
         </form>
@@ -111,9 +112,20 @@ export default function QueryPage() {
               </div>
             ) : (
               <>
+                {result.steps && result.steps.length > 0 && (
+                  <div className="p-4 border-b bg-blue-50">
+                    <p className="text-sm font-medium text-black mb-2">AI Processing Steps:</p>
+                    <ul className="text-xs text-black space-y-1">
+                      {result.steps.map((step, idx) => (
+                        <li key={idx}>• {step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <div className="p-4 border-b bg-gray-50">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-black">
                       {result.results?.length || 0} results
                     </span>
                     {result.results && result.results.length > 0 && (
@@ -140,7 +152,7 @@ export default function QueryPage() {
                           {Object.keys(result.results[0]).map(key => (
                             <th 
                               key={key} 
-                              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                              className="px-4 py-3 text-left text-xs font-medium text-black uppercase"
                             >
                               {key.replace(/_/g, ' ')}
                             </th>
@@ -175,7 +187,7 @@ export default function QueryPage() {
                     </table>
                   </div>
                 ) : (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-8 text-center text-black">
                     No results found
                   </div>
                 )}

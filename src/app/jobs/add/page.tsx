@@ -94,7 +94,7 @@ export default function AddJobPage() {
       <main className="max-w-2xl mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-black mb-1">
               Vertical *
             </label>
             <input
@@ -108,7 +108,7 @@ export default function AddJobPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-black mb-1">
               Job Function *
             </label>
             <input
@@ -122,7 +122,7 @@ export default function AddJobPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-black mb-1">
               Location *
             </label>
             <input
@@ -136,7 +136,7 @@ export default function AddJobPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-black mb-1">
               Mail Send Date
             </label>
             <div className="flex gap-2">
@@ -153,11 +153,11 @@ export default function AddJobPage() {
                 className="w-32 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">Email will auto-send at scheduled date/time (IST)</p>
+            <p className="text-xs text-black mt-1">Email will auto-send at scheduled date/time (IST)</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-black mb-1">
               Creative Image (JPG)
             </label>
             <div
@@ -179,7 +179,7 @@ export default function AddJobPage() {
                   </button>
                 </div>
               ) : (
-                <div className="text-gray-500">
+                <div className="text-black">
                   {isDragActive ? (
                     <p>Drop the JPG here...</p>
                   ) : (
@@ -194,7 +194,7 @@ export default function AddJobPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-black hover:bg-gray-50"
             >
               Cancel
             </button>

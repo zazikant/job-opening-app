@@ -12,6 +12,7 @@ interface Job {
   creative_url: string | null
   mail_send_date: string | null
   created_at: string
+  sent_status?: string
 }
 
 export default function JobsPage() {
@@ -22,6 +23,15 @@ export default function JobsPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [filterApplied, setFilterApplied] = useState(false)
+  const [editingJob, setEditingJob] = useState<Job | null>(null)
+  const [editForm, setEditForm] = useState({
+    vertical: '',
+    job_function: '',
+    location: '',
+    mail_send_date: '',
+    mail_send_time: '09:00',
+  })
+  const [savingEdit, setSavingEdit] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -88,6 +98,63 @@ export default function JobsPage() {
     }
   }
 
+  function openEditModal(job: Job) {
+    setEditingJob(job)
+    let dateStr = ''
+    let timeStr = '09:00'
+    if (job.mail_send_date) {
+      const parts = job.mail_send_date.split(' ')
+      dateStr = parts[0] || ''
+      timeStr = parts[1] ? parts[1].substring(0, 5) : '09:00'
+    }
+    setEditForm({
+      vertical: job.vertical,
+      job_function: job.job_function,
+      location: job.location,
+      mail_send_date: dateStr,
+      mail_send_time: timeStr,
+    })
+  }
+
+  function closeEditModal() {
+    setEditingJob(null)
+  }
+
+  async function saveEdit() {
+    if (!editingJob) return
+    setSavingEdit(true)
+    
+    const updateData = {
+      id: editingJob.id,
+      vertical: editForm.vertical,
+      job_function: editForm.job_function,
+      location: editForm.location,
+      mail_send_date: editForm.mail_send_date ? `${editForm.mail_send_date} ${editForm.mail_send_time}:00` : null,
+    }
+
+    try {
+      const res = await fetch('/api/jobs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      })
+      
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to update')
+      }
+
+      const updatedJob = await res.json()
+      setJobs(jobs.map(j => j.id === editingJob.id ? { ...j, ...updatedJob } : j))
+      closeEditModal()
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      alert(message)
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
   async function sendEmails() {
     setSending(true)
     const res = await fetch('/api/send-mail', {
@@ -130,7 +197,7 @@ export default function JobsPage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-gray-600 hover:text-indigo-600">
+            <Link href="/" className="text-black hover:text-indigo-600">
               ← Back
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">Job Openings</h1>
@@ -157,7 +224,7 @@ export default function JobsPage() {
           <div className="p-4 border-b">
             <div className="flex flex-wrap gap-4 items-end">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">From Date</label>
+                <label className="block text-xs font-medium text-black mb-1">From Date</label>
                 <input
                   type="date"
                   value={dateFrom}
@@ -166,7 +233,7 @@ export default function JobsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">To Date</label>
+                <label className="block text-xs font-medium text-black mb-1">To Date</label>
                 <input
                   type="date"
                   value={dateTo}
@@ -188,7 +255,7 @@ export default function JobsPage() {
                   Clear
                 </button>
               )}
-              <span className="ml-auto text-gray-600 text-sm">{jobs.length} positions</span>
+              <span className="ml-auto text-black text-sm">{jobs.length} positions</span>
             </div>
           </div>
         </div>
@@ -206,9 +273,9 @@ export default function JobsPage() {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-black">Loading...</div>
           ) : jobs.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-black">
               No jobs yet. <Link href="/jobs/add" className="text-indigo-600">Add one</Link>
             </div>
           ) : (
@@ -224,14 +291,14 @@ export default function JobsPage() {
                         className="rounded"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vertical</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Function</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Added</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mail Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Creative</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Vertical</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Function</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Location</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Date Added</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Mail Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Creative</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -262,13 +329,19 @@ export default function JobsPage() {
                             View
                           </a>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-black">-</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <button
+                          onClick={() => openEditModal(job)}
+                          className="text-black hover:text-indigo-600 text-sm mr-3"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
                           onClick={() => deleteJob(job.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          className="text-black hover:text-red-800 text-sm"
                         >
                           Delete
                         </button>
@@ -281,6 +354,83 @@ export default function JobsPage() {
           )}
         </div>
       </main>
+
+      {editingJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-black mb-4">Edit Job</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">Vertical *</label>
+                <input
+                  type="text"
+                  value={editForm.vertical}
+                  onChange={e => setEditForm({ ...editForm, vertical: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-black"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">Job Function *</label>
+                <input
+                  type="text"
+                  value={editForm.job_function}
+                  onChange={e => setEditForm({ ...editForm, job_function: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-black"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">Location *</label>
+                <input
+                  type="text"
+                  value={editForm.location}
+                  onChange={e => setEditForm({ ...editForm, location: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-black"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">Mail Send Date</label>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={editForm.mail_send_date}
+                    onChange={e => setEditForm({ ...editForm, mail_send_date: e.target.value })}
+                    className="flex-1 px-3 py-2 border rounded-lg text-black"
+                  />
+                  <input
+                    type="time"
+                    value={editForm.mail_send_time}
+                    onChange={e => setEditForm({ ...editForm, mail_send_time: e.target.value })}
+                    className="w-32 px-3 py-2 border rounded-lg text-black"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={closeEditModal}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-black hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={savingEdit}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {savingEdit ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
