@@ -71,6 +71,21 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'ID required' }, { status: 400 })
   }
 
+  const { data: job, error: _fetchError } = await supabase
+    .from('job_openings')
+    .select('creative_url')
+    .eq('id', id)
+    .single()
+
+  if (job?.creative_url) {
+    const urlParts = job.creative_url.split('/')
+    const fileName = urlParts[urlParts.length - 1]
+    
+    await supabase.storage
+      .from('job-creatives')
+      .remove([fileName])
+  }
+
   const { error } = await supabase
     .from('job_openings')
     .delete()
