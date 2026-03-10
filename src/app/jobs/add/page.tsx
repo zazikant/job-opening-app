@@ -50,7 +50,7 @@ export default function AddJobPage() {
       if (file) {
         const formData = new FormData()
         formData.append('file', file)
-        formData.append('jobData', JSON.stringify(form))
+        formData.append('jobData', JSON.stringify(jobData))
 
         const res = await fetch('/api/jobs/upload', {
           method: 'POST',
