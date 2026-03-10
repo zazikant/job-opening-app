@@ -6,7 +6,7 @@ const NVIDIA_MODEL = 'moonshotai/kimi-k2.5'
 const DEFAULT_HTML_TEMPLATE = `<div style="font-family: 'Segoe UI', Arial, sans-serif; width: 600px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; box-sizing: border-box;">
   <div style="background: white; border-radius: 16px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">
     <div style="text-align: center; margin-bottom: 20px; box-sizing: border-box;">
-      <img src="https://gemengserv.com/wp-content/uploads/2021/04/GEM-Engserv-Pvt-Ltd-logo-updated.png" alt="Logo" style="max-height: 50px; width: auto; object-fit: contain;" />
+      <img src="https://fzgzwemkssjasiwwxwra.supabase.co/storage/v1/object/public/job-creatives/logo%20gem.jpg" alt="Logo" style="max-height: 50px; width: auto; object-fit: contain;" />
     </div>
     <div style="text-align: center; margin-bottom: 15px; box-sizing: border-box;">
       <div style="display: inline-block; background: #667eea; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; box-sizing: border-box;">Vertical: {{VERTICAL}}</div>
