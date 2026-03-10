@@ -112,16 +112,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
     }
 
-    const contextPrompt = `You are a marketing copywriter. Generate promotional content for a job advertisement.
+    const contextPrompt = `Write a short job ad description (2-3 sentences, engaging tone). 
 
-Job Details:
-- Vertical: ${vertical || 'Company'}
-- Job Function: ${jobFunction || 'Position'}
-- Location: ${location || 'Remote'}
+Job: ${jobFunction || 'Position'} at ${vertical || 'Company'}
+Location: ${location || 'Remote'}
 
-User's prompt: "${prompt}"
+User requirements: ${prompt}
 
-Generate ONLY the description/content part (2-3 short paragraphs max, engaging and professional tone) that would go in the job ad. Keep it concise, energetic, and appealing to candidates. Return ONLY the text, no markdown, no explanations.`
+Return ONLY the ad text, no explanations, no markdown.`
 
     const response = await fetch(NVIDIA_API_URL, {
       method: 'POST',
@@ -133,35 +131,68 @@ Generate ONLY the description/content part (2-3 short paragraphs max, engaging a
         model: NVIDIA_MODEL,
         messages: [{ role: 'user', content: contextPrompt }],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 1000,
       }),
+      signal: AbortSignal.timeout(120000), // 2 minute timeout
     })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || 'Failed to generate content')
+      const errorMsg = errorData.error?.message || errorData.message || `API error: ${response.status}`
+      throw new Error(errorMsg)
     }
 
     const data = await response.json()
-    const generatedContent = data.choices[0]?.message?.content?.trim() || ''
+    
+    if (!data.choices || !data.choices[0]?.message) {
+      throw new Error('Invalid API response format')
+    }
+    
+    const message = data.choices[0].message
+    
+    // For reasoning models, content might be in reasoning field
+    let generatedContent = message.content?.trim() || message.reasoning?.trim() || ''
+
+    // If still empty, check for refusal
+    if (!generatedContent && message.refusal) {
+      throw new Error(message.refusal)
+    }
+    
+    // If no content generated, use fallback
+    if (!generatedContent) {
+      throw new Error('No content generated from AI')
+    }
+
+    // Extract only the first short paragraph (before --- or first line break)
+    // This model tends to output multiple variations, we only want one short ad
+    const firstPara = generatedContent.split(/^---+$/m)[0]
+      .split('\n\n')[0]
+      .replace(/^[#*]+\s*/gm, '')  // Remove markdown headers
+      .replace(/\n/g, ' ')
+      .trim()
+    
+    // Limit to reasonable length for ad
+    const finalContent = firstPara.length > 300 ? firstPara.substring(0, 300) + '...' : firstPara
 
     // Fill the template with data
     const html = HTML_TEMPLATE
       .replace('{{VERTICAL}}', vertical || 'Hiring')
       .replace('{{JOB_TITLE}}', jobFunction || 'Exciting Opportunity')
       .replace('{{LOCATION}}', location || 'Remote')
-      .replace('{{DESCRIPTION}}', generatedContent || 'Join our team!')
+      .replace('{{DESCRIPTION}}', finalContent || 'Join our team!')
 
     return NextResponse.json({
       html,
-      content: generatedContent,
+      content: finalContent,
       template: HTML_TEMPLATE
     })
 
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Unknown error'
+    console.error('Generate ad error:', message)
     return NextResponse.json({
-      error: `Failed to generate: ${message}`
+      error: `Failed to generate: ${message}`,
+      hint: 'Check if NVIDIA_API_KEY is set correctly in .env.local'
     }, { status: 500 })
   }
 }
