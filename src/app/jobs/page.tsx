@@ -322,15 +322,14 @@ export default function JobsPage() {
                       <td className="px-4 py-3 text-black">
                         {job.mail_send_date 
                           ? (() => {
-                              const normalizedDate = job.mail_send_date!.replace('T', ' ');
-                              return new Date(normalizedDate).toLocaleString('en-IN', { 
-                                day: '2-digit', 
-                                month: '2-digit', 
-                                year: 'numeric',
-                                hour: '2-digit', 
-                                minute: '2-digit',
-                                hour12: true
-                              });
+                              const dateStr = job.mail_send_date!.replace('T', ' ');
+                              const [datePart, timePart] = dateStr.split(' ');
+                              const [year, month, day] = datePart.split('-');
+                              const [time, seconds] = timePart.split(':');
+                              const hour = parseInt(time);
+                              const ampm = hour >= 12 ? 'PM' : 'AM';
+                              const hour12 = hour % 12 || 12;
+                              return `${day}/${month}/${year} ${hour12}:${seconds} ${ampm}`;
                             })()
                           : '-'}
                       </td>
