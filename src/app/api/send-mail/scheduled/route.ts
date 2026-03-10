@@ -2,29 +2,36 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import nodemailer from 'nodemailer'
 
-function toIST(date: Date): Date {
-  return new Date(date.getTime() + (5.5 * 60 * 60 * 1000))
+const TIMEZONE = 'Asia/Kolkata'
+
+function getISTDate(): { date: string; time: string } {
+  const now = new Date()
+  const istDate = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE }))
+  const date = istDate.toISOString().split('T')[0]
+  const hours = istDate.getHours().toString().padStart(2, '0')
+  const minutes = istDate.getMinutes().toString().padStart(2, '0')
+  return {
+    date,
+    time: `${hours}:${minutes}`
+  }
 }
 
-function formatIST(date: Date): string {
-  const ist = toIST(date)
-  return ist.toISOString().replace('T', ' ').substring(0, 16)
+function formatISTDisplay(date: Date): string {
+  const istDate = new Date(date.toLocaleString('en-US', { timeZone: TIMEZONE }))
+  return istDate.toISOString().replace('T', ' ').substring(0, 16) + ' IST'
 }
 
 export async function POST() {
   try {
     const supabase = createClient()
 
-    const now = new Date()
-    const nowIST = toIST(now)
-    const currentDateIST = nowIST.toISOString().split('T')[0]
-    const currentTimeIST = `${nowIST.getHours().toString().padStart(2, '0')}:${nowIST.getMinutes().toString().padStart(2, '0')}`
+    const { date: currentDateIST, time: currentTimeIST } = getISTDate()
 
     const { data: pendingJobs, error: queryError } = await supabase
       .from('job_openings')
       .select('*')
-      .not('mail_send_date', 'is', null)
       .eq('sent_status', 'pending')
+      .not('mail_send_date', 'is', null)
 
     if (queryError) {
       return NextResponse.json({ error: queryError.message }, { status: 500 })
@@ -32,14 +39,21 @@ export async function POST() {
 
     const jobsToSend = (pendingJobs || []).filter(job => {
       if (!job.mail_send_date) return false
-      const [datePart, timePart] = job.mail_send_date.split(' ')
-      return datePart === currentDateIST && timePart && timePart <= currentTimeIST
+      
+      const mailDate = new Date(job.mail_send_date)
+      const mailDateIST = new Date(mailDate.toLocaleString('en-US', { timeZone: TIMEZONE }))
+      const mailDateStr = mailDateIST.toISOString().split('T')[0]
+      const mailHours = mailDateIST.getHours().toString().padStart(2, '0')
+      const mailMinutes = mailDateIST.getMinutes().toString().padStart(2, '0')
+      const mailTime = `${mailHours}:${mailMinutes}`
+      
+      return mailDateStr === currentDateIST && mailTime <= currentTimeIST
     })
 
     if (jobsToSend.length === 0) {
       return NextResponse.json({ 
         message: 'No jobs scheduled to send',
-        currentTime: formatIST(now),
+        currentTime: `${currentDateIST} ${currentTimeIST} IST`,
         jobsFound: 0
       })
     }
@@ -65,7 +79,7 @@ export async function POST() {
     const htmlBody = `
       <h2>Job Vacancies</h2>
       <p>Total Positions: ${jobsToSend.length}</p>
-      <p>Sent at: ${formatIST(now)} IST</p>
+      <p>Sent at: ${formatISTDisplay(new Date())}</p>
       <hr/>
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         ${jobList}
@@ -105,7 +119,7 @@ export async function POST() {
       success: true, 
       sent_count: jobsToSend.length,
       jobs: jobIds,
-      sentAt: formatIST(now)
+      sentAt: formatISTDisplay(new Date())
     })
 
   } catch (e: unknown) {

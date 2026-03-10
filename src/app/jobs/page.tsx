@@ -103,11 +103,12 @@ export default function JobsPage() {
     let dateStr = ''
     let timeStr = '09:00'
     if (job.mail_send_date) {
-      // Handle both ISO format (T) and space format
-      const normalizedDate = job.mail_send_date.replace('T', ' ')
-      const parts = normalizedDate.split(' ')
-      dateStr = parts[0] || ''
-      timeStr = parts[1] ? parts[1].substring(0, 5) : '09:00'
+      const mailDate = new Date(job.mail_send_date)
+      const istDate = new Date(mailDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+      dateStr = istDate.toISOString().split('T')[0]
+      const hours = istDate.getHours().toString().padStart(2, '0')
+      const minutes = istDate.getMinutes().toString().padStart(2, '0')
+      timeStr = `${hours}:${minutes}`
     }
     setEditForm({
       vertical: job.vertical,
@@ -322,14 +323,15 @@ export default function JobsPage() {
                       <td className="px-4 py-3 text-black">
                         {job.mail_send_date 
                           ? (() => {
-                              const dateStr = job.mail_send_date!.replace('T', ' ');
-                              const [datePart, timePart] = dateStr.split(' ');
-                              const [year, month, day] = datePart.split('-');
-                              const [hourStr, minStr] = timePart.split(':');
-                              const hour = parseInt(hourStr);
-                              const minutes = minStr;
-                              const ampm = hour >= 12 ? 'PM' : 'AM';
-                              const hour12 = hour % 12 || 12;
+                              const mailDate = new Date(job.mail_send_date)
+                              const istDate = new Date(mailDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+                              const day = istDate.getDate().toString().padStart(2, '0')
+                              const month = (istDate.getMonth() + 1).toString().padStart(2, '0')
+                              const year = istDate.getFullYear()
+                              const hour = istDate.getHours()
+                              const minutes = istDate.getMinutes().toString().padStart(2, '0')
+                              const ampm = hour >= 12 ? 'PM' : 'AM'
+                              const hour12 = hour % 12 || 12
                               return `${day}/${month}/${year} ${hour12}:${minutes} ${ampm}`;
                             })()
                           : '-'}

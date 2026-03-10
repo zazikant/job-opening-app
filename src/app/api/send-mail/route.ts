@@ -2,8 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import nodemailer from 'nodemailer'
 
-function toIST(date: Date): Date {
-  return new Date(date.getTime() + (5.5 * 60 * 60 * 1000))
+const TIMEZONE = 'Asia/Kolkata'
+
+function getISTDateTime(): { date: string; time: string; datetime: string } {
+  const now = new Date()
+  const istDate = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE }))
+  const date = istDate.toISOString().split('T')[0]
+  const hours = istDate.getHours().toString().padStart(2, '0')
+  const minutes = istDate.getMinutes().toString().padStart(2, '0')
+  return {
+    date,
+    time: `${hours}:${minutes}`,
+    datetime: `${date} ${hours}:${minutes}`
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -31,16 +42,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (includeScheduled) {
-      const now = new Date()
-      const nowIST = toIST(now)
-      const currentDateTime = nowIST.toISOString().replace('T', ' ').substring(0, 16)
+      const { datetime: currentDateTimeIST } = getISTDateTime()
 
       const { data: scheduledJobs, error: scheduledError } = await supabase
         .from('job_openings')
         .select('*')
         .not('mail_send_date', 'is', null)
         .eq('sent_status', 'pending')
-        .lte('mail_send_date', currentDateTime)
+        .lte('mail_send_date', currentDateTimeIST)
 
       if (scheduledError) {
         return NextResponse.json({ error: scheduledError.message }, { status: 500 })
