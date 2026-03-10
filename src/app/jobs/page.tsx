@@ -325,11 +325,12 @@ export default function JobsPage() {
                               const dateStr = job.mail_send_date!.replace('T', ' ');
                               const [datePart, timePart] = dateStr.split(' ');
                               const [year, month, day] = datePart.split('-');
-                              const [time, seconds] = timePart.split(':');
-                              const hour = parseInt(time);
+                              const [hourStr, minStr] = timePart.split(':');
+                              const hour = parseInt(hourStr);
+                              const minutes = minStr;
                               const ampm = hour >= 12 ? 'PM' : 'AM';
                               const hour12 = hour % 12 || 12;
-                              return `${day}/${month}/${year} ${hour12}:${seconds} ${ampm}`;
+                              return `${day}/${month}/${year} ${hour12}:${minutes} ${ampm}`;
                             })()
                           : '-'}
                       </td>
