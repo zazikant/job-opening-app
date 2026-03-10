@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
 import Image from 'next/image'
-import html2canvas from 'html2canvas'
+import { toJpeg } from 'html-to-image'
 
 export default function AddJobPage() {
   const router = useRouter()
@@ -88,13 +88,12 @@ export default function AddJobPage() {
 
     setConverting(true)
     try {
-      const canvas = await html2canvas(adPreviewRef.current, {
-        scale: 2,
-        useCORS: true,
+      const imageDataUrl = await toJpeg(adPreviewRef.current, {
+        quality: 0.95,
         backgroundColor: '#667eea',
+        pixelRatio: 2, // Equivalent to scale: 2 in html2canvas
       })
 
-      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9)
       setGeneratedImage(imageDataUrl)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error'
@@ -276,14 +275,22 @@ export default function AddJobPage() {
                       <textarea
                         value={customHtml}
                         onChange={e => setCustomHtml(e.target.value)}
-                        placeholder={`<div style="width:600px; background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;font-family:sans-serif;">
+                        placeholder={`<div style="width:600px; background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;font-family:sans-serif;box-sizing:border-box;">
   <div style="background:white;border-radius:16px;padding:30px;box-sizing:border-box;">
-    <div style="background:#f5f5f5;border:2px dashed #ccc;padding:20px;margin-bottom:20px;">[Image 1]</div>
-    <div style="background:#667eea;color:white;padding:4px 12px;border-radius:15px;display:inline-block;">{{VERTICAL}}</div>
-    <h1 style="color:#333;font-size:24px;text-align:center;margin:10px 0;">{{JOB_TITLE}}</h1>
-    <p style="color:#666;text-align:center;margin-bottom:15px;">📍 {{LOCATION}}</p>
-    <p style="color:#555;line-height:1.5;">{{DESCRIPTION}}</p>
-    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:10px 30px;border-radius:25px;text-align:center;display:inline-block;margin-top:20px;">Apply Now</div>
+    <div style="text-align:center;margin-bottom:20px;box-sizing:border-box;">
+      <img src="https://gemengserv.com/wp-content/uploads/2021/04/GEM-Engserv-Pvt-Ltd-logo-updated.png" alt="Logo" style="max-height:50px;width:auto;object-fit:contain;" />
+    </div>
+    <div style="text-align:center;margin-bottom:15px;box-sizing:border-box;">
+      <div style="display:inline-block;background:#667eea;color:white;padding:4px 12px;border-radius:15px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;box-sizing:border-box;">Vertical: {{VERTICAL}}</div>
+    </div>
+    <h1 style="color:#333;font-size:28px;font-weight:800;text-align:center;margin:0 0 10px 0;line-height:1.3;box-sizing:border-box;text-transform:capitalize;"><span style="font-size:16px;color:#666;font-weight:600;display:block;margin-bottom:4px;text-transform:none;">Job Title:</span> {{JOB_TITLE}}</h1>
+    <div style="color:#666;font-size:14px;text-align:center;margin-bottom:20px;font-weight:500;box-sizing:border-box;">📍 Location: {{LOCATION}}</div>
+    <div style="color:#444;font-size:15px;line-height:1.6;text-align:center;margin-bottom:30px;box-sizing:border-box;word-wrap:break-word;">{{DESCRIPTION}}</div>
+    <div style="text-align:center;box-sizing:border-box;margin-bottom:15px;">
+      <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:12px 35px;border-radius:25px;font-size:15px;font-weight:bold;display:inline-block;box-sizing:border-box;box-shadow:0 4px 15px rgba(102,126,234,0.4);">
+        Apply Now, send CV to Ms. Harshala Kadave at <br/> harshala.kadave@gemengserv.com
+      </div>
+    </div>
   </div>
 </div>`}
                         className="w-full px-3 py-2 border rounded-lg font-mono text-xs h-48 resize-none"
