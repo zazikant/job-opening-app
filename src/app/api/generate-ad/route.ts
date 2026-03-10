@@ -3,122 +3,19 @@ import { NextRequest, NextResponse } from 'next/server'
 const NVIDIA_API_URL = 'https://integrate.api.nvidia.com/v1/chat/completions'
 const NVIDIA_MODEL = 'moonshotai/kimi-k2.5'
 
-const DEFAULT_HTML_TEMPLATE = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: 'Segoe UI', Arial, sans-serif; 
-      width: 600px; 
-      min-height: 300px;
-      max-height: 1200px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 30px;
-      overflow: hidden;
-    }
-    .container {
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      height: 100%;
-      min-height: 240px;
-      display: flex;
-      flex-direction: column;
-    }
-    .logo-placeholder {
-      width: 100px;
-      height: 50px;
-      background: #f5f5f5;
-      border: 2px dashed #ccc;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #999;
-      font-size: 11px;
-      margin-bottom: 20px;
-      flex-shrink: 0;
-    }
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .vertical-tag {
-      display: inline-block;
-      background: #667eea;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 15px;
-      font-size: 11px;
-      margin-bottom: 12px;
-      flex-shrink: 0;
-      align-self: flex-start;
-    }
-    h1 {
-      color: #333;
-      font-size: 24px;
-      margin-bottom: 8px;
-      text-align: center;
-      line-height: 1.2;
-      flex-shrink: 0;
-    }
-    .location {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      justify-content: center;
-    }
-    .description {
-      color: #555;
-      font-size: 13px;
-      line-height: 1.5;
-      margin-bottom: 15px;
-      flex: 1;
-      overflow: hidden;
-    }
-    .cta {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 10px 30px;
-      border-radius: 25px;
-      font-size: 14px;
-      font-weight: bold;
-      text-align: center;
-      display: inline-block;
-      flex-shrink: 0;
-      align-self: center;
-    }
-    .footer {
-      margin-top: auto;
-      text-align: center;
-      color: #999;
-      font-size: 10px;
-      flex-shrink: 0;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="logo-placeholder">[Image 1]</div>
-    <div class="content">
-      <div class="vertical-tag">{{VERTICAL}}</div>
-      <h1>{{JOB_TITLE}}</h1>
-      <div class="location">📍 {{LOCATION}}</div>
-      <div class="description">{{DESCRIPTION}}</div>
-      <div class="cta">Apply Now</div>
+const DEFAULT_HTML_TEMPLATE = `<div style="font-family: 'Segoe UI', Arial, sans-serif; width: 600px; min-height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; box-sizing: border-box;">
+  <div style="background: white; border-radius: 16px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); height: 100%; min-height: 240px; display: flex; flex-direction: column; box-sizing: border-box;">
+    <div style="width: 100px; height: 50px; background: #f5f5f5; border: 2px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 11px; margin-bottom: 20px; flex-shrink: 0; box-sizing: border-box;">[Image 1]</div>
+    <div style="flex: 1; display: flex; flex-direction: column; box-sizing: border-box;">
+      <div style="display: inline-block; background: #667eea; color: white; padding: 4px 12px; border-radius: 15px; font-size: 11px; margin-bottom: 12px; flex-shrink: 0; align-self: flex-start; box-sizing: border-box;">{{VERTICAL}}</div>
+      <h1 style="color: #333; font-size: 24px; margin: 0 0 8px 0; text-align: center; line-height: 1.2; flex-shrink: 0; box-sizing: border-box;">{{JOB_TITLE}}</h1>
+      <div style="color: #666; font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; justify-content: center; box-sizing: border-box;">📍 {{LOCATION}}</div>
+      <div style="color: #555; font-size: 13px; line-height: 1.5; margin-bottom: 15px; flex: 1; overflow: hidden; box-sizing: border-box;">{{DESCRIPTION}}</div>
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 30px; border-radius: 25px; font-size: 14px; font-weight: bold; text-align: center; display: inline-block; flex-shrink: 0; align-self: center; box-sizing: border-box;">Apply Now</div>
     </div>
-    <div class="footer">Join our amazing team!</div>
+    <div style="margin-top: 20px; text-align: center; color: #999; font-size: 10px; flex-shrink: 0; box-sizing: border-box;">Join our amazing team!</div>
   </div>
-</body>
-</html>`
+</div>`
 
 const REQUIRED_PLACEHOLDERS = ['{{DESCRIPTION}}', '{{VERTICAL}}', '{{JOB_TITLE}}', '{{LOCATION}}']
 

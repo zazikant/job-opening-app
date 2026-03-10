@@ -276,19 +276,16 @@ export default function AddJobPage() {
                       <textarea
                         value={customHtml}
                         onChange={e => setCustomHtml(e.target.value)}
-                        placeholder={`<!DOCTYPE html>
-<html>
-<body style="width:600px; background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;">
-  <div style="background:white;border-radius:16px;padding:30px;">
+                        placeholder={`<div style="width:600px; background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;font-family:sans-serif;">
+  <div style="background:white;border-radius:16px;padding:30px;box-sizing:border-box;">
     <div style="background:#f5f5f5;border:2px dashed #ccc;padding:20px;margin-bottom:20px;">[Image 1]</div>
     <div style="background:#667eea;color:white;padding:4px 12px;border-radius:15px;display:inline-block;">{{VERTICAL}}</div>
     <h1 style="color:#333;font-size:24px;text-align:center;margin:10px 0;">{{JOB_TITLE}}</h1>
     <p style="color:#666;text-align:center;margin-bottom:15px;">📍 {{LOCATION}}</p>
     <p style="color:#555;line-height:1.5;">{{DESCRIPTION}}</p>
-    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:10px 30px;border-radius:25px;text-align:center;display:inline-block;">Apply Now</div>
+    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:10px 30px;border-radius:25px;text-align:center;display:inline-block;margin-top:20px;">Apply Now</div>
   </div>
-</body>
-</html>`}
+</div>`}
                         className="w-full px-3 py-2 border rounded-lg font-mono text-xs h-48 resize-none"
                       />
                       <p className="text-xs text-black mt-1">
