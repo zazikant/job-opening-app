@@ -103,7 +103,9 @@ export default function JobsPage() {
     let dateStr = ''
     let timeStr = '09:00'
     if (job.mail_send_date) {
-      const parts = job.mail_send_date.split(' ')
+      // Handle both ISO format (T) and space format
+      const normalizedDate = job.mail_send_date.replace('T', ' ')
+      const parts = normalizedDate.split(' ')
       dateStr = parts[0] || ''
       timeStr = parts[1] ? parts[1].substring(0, 5) : '09:00'
     }
@@ -317,7 +319,21 @@ export default function JobsPage() {
                       <td className="px-4 py-3 text-black">{job.job_function}</td>
                       <td className="px-4 py-3 text-black">{job.location}</td>
                       <td className="px-4 py-3 text-black">{job.date_added}</td>
-                      <td className="px-4 py-3 text-black">{job.mail_send_date || '-'}</td>
+                      <td className="px-4 py-3 text-black">
+                        {job.mail_send_date 
+                          ? (() => {
+                              const normalizedDate = job.mail_send_date!.replace('T', ' ');
+                              return new Date(normalizedDate).toLocaleString('en-IN', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                hour12: true
+                              });
+                            })()
+                          : '-'}
+                      </td>
                       <td className="px-4 py-3">
                         {job.creative_url ? (
                           <a 

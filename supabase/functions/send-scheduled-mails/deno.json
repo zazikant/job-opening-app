@@ -1,0 +1,7 @@
+{
+  "name": "send-scheduled-mails",
+  "permissions": [
+    "nodemailer:allow",
+    "nodemailer:*"
+  ]
+}
