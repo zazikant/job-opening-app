@@ -12,92 +12,109 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     body { 
       font-family: 'Segoe UI', Arial, sans-serif; 
       width: 600px; 
-      min-height: 400px;
+      min-height: 300px;
       max-height: 1200px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 40px;
+      padding: 30px;
+      overflow: hidden;
     }
     .container {
       background: white;
-      border-radius: 20px;
-      padding: 40px;
+      border-radius: 16px;
+      padding: 30px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      height: 100%;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
     }
     .logo-placeholder {
-      width: 120px;
-      height: 60px;
-      background: #f0f0f0;
+      width: 100px;
+      height: 50px;
+      background: #f5f5f5;
       border: 2px dashed #ccc;
-      border-radius: 8px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #999;
-      font-size: 12px;
-      margin-bottom: 30px;
-    }
-    h1 {
-      color: #333;
-      font-size: 32px;
+      font-size: 11px;
       margin-bottom: 20px;
-      text-align: center;
+      flex-shrink: 0;
+    }
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
     .vertical-tag {
       display: inline-block;
       background: #667eea;
       color: white;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-      margin-bottom: 20px;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-size: 11px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+      align-self: flex-start;
     }
-    .job-title {
-      color: #222;
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 15px;
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 8px;
+      text-align: center;
+      line-height: 1.2;
+      flex-shrink: 0;
     }
     .location {
       color: #666;
-      font-size: 18px;
-      margin-bottom: 30px;
+      font-size: 14px;
+      margin-bottom: 15px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex-shrink: 0;
+      justify-content: center;
     }
     .description {
       color: #555;
-      font-size: 16px;
-      line-height: 1.8;
-      margin-bottom: 30px;
-      white-space: pre-line;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 15px;
+      flex: 1;
+      overflow: hidden;
     }
     .cta {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 15px 40px;
-      border-radius: 30px;
-      font-size: 18px;
+      padding: 10px 30px;
+      border-radius: 25px;
+      font-size: 14px;
       font-weight: bold;
       text-align: center;
       display: inline-block;
+      flex-shrink: 0;
+      align-self: center;
     }
     .footer {
-      margin-top: 30px;
+      margin-top: auto;
       text-align: center;
       color: #999;
-      font-size: 12px;
+      font-size: 10px;
+      flex-shrink: 0;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo-placeholder">[Image 1]</div>
-    <div class="vertical-tag">{{VERTICAL}}</div>
-    <h1>{{JOB_TITLE}}</h1>
-    <div class="location">📍 {{LOCATION}}</div>
-    <div class="description">{{DESCRIPTION}}</div>
-    <div class="cta">Apply Now</div>
+    <div class="content">
+      <div class="vertical-tag">{{VERTICAL}}</div>
+      <h1>{{JOB_TITLE}}</h1>
+      <div class="location">📍 {{LOCATION}}</div>
+      <div class="description">{{DESCRIPTION}}</div>
+      <div class="cta">Apply Now</div>
+    </div>
     <div class="footer">Join our amazing team!</div>
   </div>
 </body>
@@ -112,14 +129,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
     }
 
-    const contextPrompt = `Write a short job ad description (2-3 sentences, engaging tone). 
+    const contextPrompt = `Write a VERY SHORT job ad - just 1-2 sentences (max 100 words total).
 
-Job: ${jobFunction || 'Position'} at ${vertical || 'Company'}
+Job: ${jobFunction || 'Position'}
+Company: ${vertical || 'Our Company'}
 Location: ${location || 'Remote'}
 
 User requirements: ${prompt}
 
-Return ONLY the ad text, no explanations, no markdown.`
+Write only the ad text - no headers, no bullet points, no markdown. Just 1-2 punchy sentences that fit in a small ad banner. Keep it under 100 words.`
 
     const response = await fetch(NVIDIA_API_URL, {
       method: 'POST',
@@ -163,16 +181,19 @@ Return ONLY the ad text, no explanations, no markdown.`
       throw new Error('No content generated from AI')
     }
 
-    // Extract only the first short paragraph (before --- or first line break)
-    // This model tends to output multiple variations, we only want one short ad
-    const firstPara = generatedContent.split(/^---+$/m)[0]
-      .split('\n\n')[0]
-      .replace(/^[#*]+\s*/gm, '')  // Remove markdown headers
-      .replace(/\n/g, ' ')
-      .trim()
-    
-    // Limit to reasonable length for ad
-    const finalContent = firstPara.length > 300 ? firstPara.substring(0, 300) + '...' : firstPara
+    // Extract only the first very short paragraph (keep it concise for banner)
+    // Take first 2 sentences max
+    const sentences = firstPara.split(/[.!?]+/).filter(s => s.trim())
+    let finalContent = sentences.slice(0, 2).join('. ').trim()
+    if (!finalContent) {
+      finalContent = firstPara.substring(0, 150).trim()
+    }
+    if (!finalContent) {
+      finalContent = generatedContent.substring(0, 150).trim()
+    }
+    // Ensure it ends with punctuation
+    if (finalContent && !/[.!?]$/.test(finalContent)) {
+      finalContent += '.'
 
     // Fill the template with data
     const html = HTML_TEMPLATE
