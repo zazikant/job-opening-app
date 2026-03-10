@@ -16,6 +16,8 @@ export default function AddJobPage() {
   const [generatedHtml, setGeneratedHtml] = useState<string | null>(null)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [adPrompt, setAdPrompt] = useState('')
+  const [customHtml, setCustomHtml] = useState('')
+  const [showCustomHtml, setShowCustomHtml] = useState(false)
   const [generationError, setGenerationError] = useState<string | null>(null)
   const adPreviewRef = useRef<HTMLDivElement>(null)
   const [form, setForm] = useState({
@@ -62,6 +64,7 @@ export default function AddJobPage() {
           vertical: form.vertical,
           jobFunction: form.job_function,
           location: form.location,
+          customHtml: showCustomHtml && customHtml.trim() ? customHtml : null,
         }),
       })
 
@@ -258,8 +261,45 @@ export default function AddJobPage() {
                   placeholder="e.g., Write an exciting promotion for a senior software engineer position focusing on remote work and benefits"
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 h-24 resize-none"
                 />
+                
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomHtml(!showCustomHtml)}
+                    className="text-sm text-indigo-600 hover:underline"
+                  >
+                    {showCustomHtml ? '▼ Hide Custom HTML' : '▶ Use Custom HTML Template'}
+                  </button>
+                  
+                  {showCustomHtml && (
+                    <div className="mt-2">
+                      <textarea
+                        value={customHtml}
+                        onChange={e => setCustomHtml(e.target.value)}
+                        placeholder={`<!DOCTYPE html>
+<html>
+<body style="width:600px; background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;">
+  <div style="background:white;border-radius:16px;padding:30px;">
+    <div style="background:#f5f5f5;border:2px dashed #ccc;padding:20px;margin-bottom:20px;">[Image 1]</div>
+    <div style="background:#667eea;color:white;padding:4px 12px;border-radius:15px;display:inline-block;">{{VERTICAL}}</div>
+    <h1 style="color:#333;font-size:24px;text-align:center;margin:10px 0;">{{JOB_TITLE}}</h1>
+    <p style="color:#666;text-align:center;margin-bottom:15px;">📍 {{LOCATION}}</p>
+    <p style="color:#555;line-height:1.5;">{{DESCRIPTION}}</p>
+    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:10px 30px;border-radius:25px;text-align:center;display:inline-block;">Apply Now</div>
+  </div>
+</body>
+</html>`}
+                        className="w-full px-3 py-2 border rounded-lg font-mono text-xs h-48 resize-none"
+                      />
+                      <p className="text-xs text-black mt-1">
+                        Required placeholders: {'{{VERTICAL}}'}, {'{{JOB_TITLE}}'}, {'{{LOCATION}}'}, {'{{DESCRIPTION}}'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
                 <p className="text-xs text-black mt-1">
-                  Note: Kimi K2.5 is text-only. It generates HTML content, not images.
+                  Kimi K2.5 fills {'{{DESCRIPTION}}'} in your HTML template
                 </p>
                 <button
                   type="button"
@@ -343,13 +383,15 @@ export default function AddJobPage() {
               <label className="block text-sm font-medium text-black mb-1">
                 Live Preview
               </label>
-              <div className="border rounded-lg overflow-hidden bg-gray-100 p-2 min-h-[500px]">
+              <div className="border rounded-lg overflow-auto bg-gray-100 p-2 max-h-[500px]">
                 {generatedHtml ? (
-                  <div 
-                    ref={adPreviewRef}
-                    dangerouslySetInnerHTML={{ __html: generatedHtml }}
-                    className="transform scale-75 origin-top-left w-[600px]"
-                  />
+                  <div className="flex justify-center">
+                    <div 
+                      ref={adPreviewRef}
+                      dangerouslySetInnerHTML={{ __html: generatedHtml }}
+                      className="flex-shrink-0"
+                    />
+                  </div>
                 ) : generatedImage ? (
                   <div ref={adPreviewRef}>
                     <img src={generatedImage} alt="Generated Ad" className="max-w-full rounded" />

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const NVIDIA_API_URL = 'https://integrate.api.nvidia.com/v1/chat/completions'
 const NVIDIA_MODEL = 'moonshotai/kimi-k2.5'
 
-const HTML_TEMPLATE = `<!DOCTYPE html>
+const DEFAULT_HTML_TEMPLATE = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -120,13 +120,33 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>`
 
+const REQUIRED_PLACEHOLDERS = ['{{DESCRIPTION}}', '{{VERTICAL}}', '{{JOB_TITLE}}', '{{LOCATION}}']
+
+function validateHtmlTemplate(html: string): { valid: boolean; error?: string } {
+  for (const placeholder of REQUIRED_PLACEHOLDERS) {
+    if (!html.includes(placeholder)) {
+      return { valid: false, error: `Missing required placeholder: ${placeholder}` }
+    }
+  }
+  return { valid: true }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { prompt, vertical, jobFunction, location } = body
+    const { prompt, vertical, jobFunction, location, customHtml } = body
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
+    }
+
+    // Use custom HTML if provided, otherwise use default
+    const htmlTemplate = customHtml?.trim() || DEFAULT_HTML_TEMPLATE
+
+    // Validate custom HTML has required placeholders
+    const validation = validateHtmlTemplate(htmlTemplate)
+    if (customHtml && !validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
     const contextPrompt = `Write a VERY SHORT job ad - just 1-2 sentences (max 100 words total).
@@ -169,7 +189,7 @@ Write only the ad text - no headers, no bullet points, no markdown. Just 1-2 pun
     const message = data.choices[0].message
     
     // For reasoning models, content might be in reasoning field
-    let generatedContent = message.content?.trim() || message.reasoning?.trim() || ''
+    const generatedContent = message.content?.trim() || message.reasoning?.trim() || ''
 
     // If still empty, check for refusal
     if (!generatedContent && message.refusal) {
@@ -183,20 +203,18 @@ Write only the ad text - no headers, no bullet points, no markdown. Just 1-2 pun
 
     // Extract only the first very short paragraph (keep it concise for banner)
     // Take first 2 sentences max
-    const sentences = firstPara.split(/[.!?]+/).filter(s => s.trim())
+    const sentences = generatedContent.split(/[.!?]+/).filter((s: string) => s.trim())
     let finalContent = sentences.slice(0, 2).join('. ').trim()
-    if (!finalContent) {
-      finalContent = firstPara.substring(0, 150).trim()
-    }
     if (!finalContent) {
       finalContent = generatedContent.substring(0, 150).trim()
     }
     // Ensure it ends with punctuation
     if (finalContent && !/[.!?]$/.test(finalContent)) {
       finalContent += '.'
+    }
 
     // Fill the template with data
-    const html = HTML_TEMPLATE
+    const html = htmlTemplate
       .replace('{{VERTICAL}}', vertical || 'Hiring')
       .replace('{{JOB_TITLE}}', jobFunction || 'Exciting Opportunity')
       .replace('{{LOCATION}}', location || 'Remote')
@@ -205,7 +223,7 @@ Write only the ad text - no headers, no bullet points, no markdown. Just 1-2 pun
     return NextResponse.json({
       html,
       content: finalContent,
-      template: HTML_TEMPLATE
+      template: htmlTemplate
     })
 
   } catch (e: unknown) {
