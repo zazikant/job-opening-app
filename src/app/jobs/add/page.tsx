@@ -133,8 +133,16 @@ export default function AddJobPage() {
       let uploadRes: Response
 
       if (generatedImage) {
-        const blob = await fetch(generatedImage).then(r => r.blob())
-        const imageFile = new File([blob], 'ad-creative.jpg', { type: 'image/jpeg' })
+        // Convert base64 data URL to Blob directly instead of using fetch()
+        const byteString = atob(generatedImage.split(',')[1])
+        const mimeString = generatedImage.split(',')[0].split(':')[1].split(';')[0]
+        const ab = new ArrayBuffer(byteString.length)
+        const ia = new Uint8Array(ab)
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i)
+        }
+        const blob = new Blob([ab], { type: mimeString })
+        const imageFile = new File([blob], `ad-creative-${Date.now()}.jpg`, { type: 'image/jpeg' })
         
         const formData = new FormData()
         formData.append('file', imageFile)
